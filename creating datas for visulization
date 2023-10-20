@@ -1,0 +1,206 @@
+import pandas as pd
+import plotly.express as px
+import requests
+import json
+import streamlit as st
+import mysql.connector as sql
+
+# Fetch GeoJSON data
+url = "https://gist.githubusercontent.com/jbrobst/56c13bbbf9d97d187fea01ca62ea5112/raw/e388c4cae20aa53cb5090210a42ebb9b765c0a36/india_states.geojson"
+response = requests.get(url)
+data1 = json.loads(response.content)
+
+# Extract state names and sort them in alphabetical order
+state_names = [feature['properties']['ST_NM'] for feature in data1['features']]
+state_names.sort()
+print(state_names)
+
+
+# Creating connection with MySQL workbench and retrieve the data from the "agg_trans" table as dataframe:
+mydb = sql.connect(host="localhost",
+                   user="root", 
+                   password="Jagan*1998",
+                   database="phonepe_data")
+mycursor = mydb.cursor()
+
+mycursor.execute("SELECT state, year, quarter, transaction_type, transaction_count, transaction_amount FROM agg_trans")
+data = mycursor.fetchall()
+columns = ["state", "year", "quarter", "transaction_type", "transaction_count", "transaction_amount"]
+df = pd.DataFrame(data, columns=columns)
+df
+
+#Find unique values in column 'A'
+print
+(pd.DataFrame(df['state'].unique()))
+
+
+# Assuming your DataFrame 'df' looks like this
+# df = pd.DataFrame({'states': [...state_names...]})
+
+# Define the conversion function
+def convert_state_name(state):
+    return state.replace('-', ' ').title()
+
+# Apply the conversion function to the 'states' column in the DataFrame
+df['state'] = df['state'].apply(lambda x: convert_state_name(x))
+
+# Assuming you have already converted and updated the DataFrame 'df'
+df.to_csv("C:/Users/DELL/Phonepe_data/india_map.csv", index=False)
+
+# Read the "india_map" CSV file into a DataFrame
+df1 = pd.read_csv("C:/Users/DELL/Phonepe_data/india_map.csv")
+print(df1.head(4))
+
+import pandas as pd
+
+# Assuming df is your DataFrame
+min_transaction_amount = df['transaction_amount'].min()
+max_transaction_amount = df['transaction_amount'].max()
+
+print("Minimum Transaction Amount:", min_transaction_amount)
+print("Maximum Transaction Amount:", max_transaction_amount)
+
+
+ #Geo plot
+
+
+fig_tra = px.choropleth(
+    df1,
+    geojson="https://gist.githubusercontent.com/jbrobst/56c13bbbf9d97d187fea01ca62ea5112/raw/e388c4cae20aa53cb5090210a42ebb9b765c0a36/india_states.geojson",
+    featureidkey='properties.ST_NM',
+    locations='state',
+    color='transaction_amount',
+    color_continuous_scale='thermal',
+    range_color=(df1['transaction_amount'].min(), df1['transaction_amount'].max()),  # Set custom range
+    title='Transaction Analysis'
+)
+
+fig_tra.update_geos(fitbounds="locations", visible=False)
+fig_tra.update_layout(title_font=dict(size=33), title_font_color='#6739b7', height=800)
+
+st.plotly_chart(fig_tra, use_container_width=True)
+
+
+import pandas as pd
+import plotly.express as px
+import streamlit as st
+
+# Read the "india_map" CSV file into a DataFrame
+# Assuming df1 is your DataFrame containing the data
+df1 = pd.read_csv('C:/Users/DELL/Phonepe_data/india_map.csv')
+print(df1.head(4))
+
+# Debugging statements
+print("Data Types:")
+print(df1.dtypes)
+
+print("Null Values:")
+print(df1.isnull().sum())
+
+print("Transaction Amount Summary:")
+print(df1['transaction_amount'].describe())
+
+# Calculate the range of transaction_amount for setting zmin and zmax
+zmin = df1['transaction_amount'].min()
+zmax = df1['transaction_amount'].max()
+
+fig_tra = px.choropleth(
+    df1,
+    geojson="https://gist.githubusercontent.com/jbrobst/56c13bbbf9d97d187fea01ca62ea5112/raw/e388c4cae20aa53cb5090210a42ebb9b765c0a36/india_states.geojson",
+    featureidkey='properties.ST_NM',
+    locations='state',
+    color='transaction_amount',
+    color_continuous_scale='Viridis',  # Change the color scale
+    range_color=(zmin, zmax),  # Set custom range
+    title='Transaction Analysis'
+)
+
+fig_tra.update_geos(fitbounds="locations", visible=False)
+fig_tra.update_layout(title_font=dict(size=33), title_font_color='#6739b7', height=800)
+
+st.plotly_chart(fig_tra, use_container_width=True)
+
+
+
+
+# data query for map_trans :
+# Creating connection with MySQL workbench and retrieve the data from the "agg_trans" table as dataframe:
+mydb = sql.connect(host="localhost",
+                   user="root", 
+                   password="Jagan*1998", 
+                   database="phonepe_data")
+mycursor = mydb.cursor()
+
+mycursor.execute("SELECT state, year, quarter, District, Count, Amount FROM map_trans")
+data = mycursor.fetchall()
+columns = ["state", "year", "quarter", "District", "Count", "Amount"]
+df3 = pd.DataFrame(data, columns=columns)
+df3
+df3.to_csv("C:/Users/DELL/Phonepe_data/histogram_district.csv", index=False)
+
+mycursor.execute("SELECT State, Year, Quarter, District, RegisteredUser, AppOpens FROM map_user")
+data = mycursor.fetchall()
+columns = ["State", "Year", "Quarter", "District", "RegisteredUser", "AppOpens"]
+df4 = pd.DataFrame(data, columns=columns)
+print(df4)
+# download to local drive as csv file ;
+df4.to_csv("C:/Users/DELL/Phonepe_data/locations_plot.csv", index=False)
+
+ #Assuming your DataFrame 'df' looks like this
+# df = pd.DataFrame({'states': [...state_names...]})
+
+# Define the conversion function
+def convert_state_name(state):
+    return state.replace('-', ' ').title()
+
+# Apply the conversion function to the 'states' column in the DataFrame
+df4['State'] = df4['State'].apply(lambda x: convert_state_name(x))
+
+# Assuming you have already converted and updated the DataFrame 'df'
+df4.to_csv("C:/Users/DELL/Phonepe_data/state_map.csv", index=False)
+# read the "state_map" CSV file into a DataFrame:
+df4 = pd.read_csv('C:/Users/DELL/Phonepe_data/state_map.csv')
+print(df4)
+
+mycursor = mydb.cursor()
+
+mycursor.execute("SELECT state, year, quarter, transaction_type, transaction_count, transaction_amount FROM agg_trans")
+data = mycursor.fetchall()
+columns = ["state", "year", "quarter", "transaction_type", "transaction_count", "transaction_amount"]
+df = pd.DataFrame(data, columns=columns)
+print(df)
+
+df['transaction_amount'].describe()
+
+
+# Creating connection with MySQL workbench and retrieve the data from the "agg_user" table as dataframe:
+mydb = sql.connect(host="localhost",
+                   user="root", 
+                   password="Jagan*1998",
+                   database="phonepe_data")
+mycursor = mydb.cursor()
+
+mycursor.execute("SELECT State, Year, Quarter,Brands, Count,Percentage FROM agg_user")
+data = mycursor.fetchall()
+columns = ["State", "Year", "Quarter", "Brands", "Count", "Percentage"]
+df2 = pd.DataFrame(data, columns=columns)
+print(df2)
+# Define the conversion function
+def convert_state_name(State):
+    return State.replace('-', ' ').title()
+
+# Apply the conversion function to the 'states' column in the DataFrame
+df2['State'] = df2['State'].apply(lambda x: convert_state_name(x))
+
+# Assuming you have already converted and updated the DataFrame 'df'
+df2.to_csv("C:/Users/DELL/Phonepe_data/bar_chart.csv", index=False)
+
+# Read the "india_map" CSV file into a DataFrame
+df2 = pd.read_csv("C:/Users/DELL/Phonepe_data/bar_chart.csv")
+print(df2.head(4))
+#Find unique values in column 'A'
+print
+(pd.DataFrame(df2['State'].unique()))
+
+df2= pd.read_csv('C:/Users/DELL/Phonepe_data/bar_chart.csv')
+print(df2.head(4))
